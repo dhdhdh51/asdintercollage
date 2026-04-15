@@ -3,6 +3,9 @@
 use Illuminate\Support\Str;
 use Pdo\Mysql;
 
+// Load local config (written by the web installer — no .env needed)
+$_lc = file_exists(__DIR__ . '/local.php') ? require __DIR__ . '/local.php' : [];
+
 return [
 
     /*
@@ -17,7 +20,7 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION', 'sqlite'),
+    'default' => $_lc['db_connection'] ?? env('DB_CONNECTION', 'sqlite'),
 
     /*
     |--------------------------------------------------------------------------
@@ -35,7 +38,7 @@ return [
         'sqlite' => [
             'driver' => 'sqlite',
             'url' => env('DB_URL'),
-            'database' => env('DB_DATABASE', database_path('database.sqlite')),
+            'database' => $_lc['db_database'] ?? env('DB_DATABASE', database_path('database.sqlite')),
             'prefix' => '',
             'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
             'busy_timeout' => null,
@@ -47,11 +50,11 @@ return [
         'mysql' => [
             'driver' => 'mysql',
             'url' => env('DB_URL'),
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '3306'),
-            'database' => env('DB_DATABASE', 'laravel'),
-            'username' => env('DB_USERNAME', 'root'),
-            'password' => env('DB_PASSWORD', ''),
+            'host'     => $_lc['db_host']     ?? env('DB_HOST', '127.0.0.1'),
+            'port'     => $_lc['db_port']     ?? env('DB_PORT', '3306'),
+            'database' => $_lc['db_database'] ?? env('DB_DATABASE', 'laravel'),
+            'username' => $_lc['db_username'] ?? env('DB_USERNAME', 'root'),
+            'password' => $_lc['db_password'] ?? env('DB_PASSWORD', ''),
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => env('DB_CHARSET', 'utf8mb4'),
             'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
@@ -67,11 +70,11 @@ return [
         'mariadb' => [
             'driver' => 'mariadb',
             'url' => env('DB_URL'),
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '3306'),
-            'database' => env('DB_DATABASE', 'laravel'),
-            'username' => env('DB_USERNAME', 'root'),
-            'password' => env('DB_PASSWORD', ''),
+            'host'     => $_lc['db_host']     ?? env('DB_HOST', '127.0.0.1'),
+            'port'     => $_lc['db_port']     ?? env('DB_PORT', '3306'),
+            'database' => $_lc['db_database'] ?? env('DB_DATABASE', 'laravel'),
+            'username' => $_lc['db_username'] ?? env('DB_USERNAME', 'root'),
+            'password' => $_lc['db_password'] ?? env('DB_PASSWORD', ''),
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => env('DB_CHARSET', 'utf8mb4'),
             'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),

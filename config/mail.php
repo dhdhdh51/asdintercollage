@@ -1,5 +1,8 @@
 <?php
 
+// Load local config (written by the web installer — no .env needed)
+$_lc = file_exists(__DIR__ . '/local.php') ? require __DIR__ . '/local.php' : [];
+
 return [
 
     /*
@@ -14,7 +17,7 @@ return [
     |
     */
 
-    'default' => env('MAIL_MAILER', 'log'),
+    'default' => $_lc['mail_mailer'] ?? env('MAIL_MAILER', 'log'),
 
     /*
     |--------------------------------------------------------------------------
@@ -38,15 +41,16 @@ return [
     'mailers' => [
 
         'smtp' => [
-            'transport' => 'smtp',
-            'scheme' => env('MAIL_SCHEME'),
-            'url' => env('MAIL_URL'),
-            'host' => env('MAIL_HOST', '127.0.0.1'),
-            'port' => env('MAIL_PORT', 2525),
-            'username' => env('MAIL_USERNAME'),
-            'password' => env('MAIL_PASSWORD'),
-            'timeout' => null,
-            'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
+            'transport'    => 'smtp',
+            'scheme'       => env('MAIL_SCHEME'),
+            'url'          => env('MAIL_URL'),
+            'host'         => $_lc['mail_host']       ?? env('MAIL_HOST', 'smtp.gmail.com'),
+            'port'         => $_lc['mail_port']       ?? env('MAIL_PORT', 587),
+            'username'     => $_lc['mail_username']   ?? env('MAIL_USERNAME'),
+            'password'     => $_lc['mail_password']   ?? env('MAIL_PASSWORD'),
+            'encryption'   => $_lc['mail_encryption'] ?? env('MAIL_ENCRYPTION', 'tls'),
+            'timeout'      => null,
+            'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) ($_lc['app_url'] ?? env('APP_URL', 'http://localhost')), PHP_URL_HOST)),
         ],
 
         'ses' => [
@@ -111,8 +115,8 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-        'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
+        'address' => $_lc['mail_from'] ?? env('MAIL_FROM_ADDRESS', 'noreply@school.com'),
+        'name'    => $_lc['app_name']  ?? env('MAIL_FROM_NAME', 'School ERP'),
     ],
 
 ];

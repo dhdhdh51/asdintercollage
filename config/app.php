@@ -1,5 +1,8 @@
 <?php
 
+// Load local config (written by the web installer — no .env needed)
+$_lc = file_exists(__DIR__ . '/local.php') ? require __DIR__ . '/local.php' : [];
+
 return [
 
     /*
@@ -13,7 +16,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => $_lc['app_name'] ?? env('APP_NAME', 'School ERP'),
 
     /*
     |--------------------------------------------------------------------------
@@ -26,7 +29,7 @@ return [
     |
     */
 
-    'env' => env('APP_ENV', 'production'),
+    'env' => $_lc['app_env'] ?? env('APP_ENV', 'production'),
 
     /*
     |--------------------------------------------------------------------------
@@ -39,7 +42,7 @@ return [
     |
     */
 
-    'debug' => (bool) env('APP_DEBUG', false),
+    'debug' => (bool) ($_lc['app_debug'] ?? env('APP_DEBUG', false)),
 
     /*
     |--------------------------------------------------------------------------
@@ -52,7 +55,7 @@ return [
     |
     */
 
-    'url' => env('APP_URL', 'http://localhost'),
+    'url' => $_lc['app_url'] ?? env('APP_URL', 'http://localhost'),
 
     /*
     |--------------------------------------------------------------------------
@@ -65,7 +68,7 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => $_lc['timezone'] ?? 'Asia/Kolkata',
 
     /*
     |--------------------------------------------------------------------------
@@ -97,7 +100,7 @@ return [
 
     'cipher' => 'AES-256-CBC',
 
-    'key' => env('APP_KEY'),
+    'key' => $_lc['app_key'] ?? env('APP_KEY'),
 
     'previous_keys' => [
         ...array_filter(

@@ -1,281 +1,298 @@
-# School ERP System - Complete Setup & Deployment Guide
+# School ERP System — Complete Setup & Deployment Guide
+
+> **No terminal required.** This guide uses only cPanel File Manager,
+> phpMyAdmin, and the browser-based installer.
+
+---
 
 ## Tech Stack
 - **Backend**: Laravel 11 (PHP 8.2+)
-- **Database**: MySQL 5.7+ / MariaDB 10.3+
+- **Database**: MySQL 5.7+ / MariaDB 10.3+ (or SQLite)
 - **Frontend**: Bootstrap 5, Chart.js
 - **Payment**: PayU Payment Gateway
 - **Email**: SMTP (Gmail / Custom)
 
 ---
 
-## 🚀 Quick Start (Local Development)
+## cPanel Shared Hosting — Step-by-Step
 
-### Prerequisites
-- PHP 8.2+ with extensions: mbstring, pdo_mysql, gd, zip, curl, openssl
-- Composer 2.x
-- MySQL 5.7+
-- Node.js (optional, for Vite)
+### Step 1 — Create a MySQL Database (cPanel)
 
-### Step 1: Clone & Install
-```bash
-git clone <repo-url> school-erp
-cd school-erp
-composer install
-cp .env.example .env
-php artisan key:generate
-```
-
-### Step 2: Database Setup
-```bash
-# Create MySQL database
-mysql -u root -p -e "CREATE DATABASE school_erp CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-
-# OR import the SQL file directly:
-mysql -u root -p school_erp < database/school_erp.sql
-```
-
-### Step 3: Configure Environment (.env)
-```env
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=school_erp
-DB_USERNAME=root
-DB_PASSWORD=your_password
-
-MAIL_MAILER=smtp
-MAIL_HOST=smtp.gmail.com
-MAIL_PORT=587
-MAIL_USERNAME=your@gmail.com
-MAIL_PASSWORD=your_app_password
-MAIL_FROM_ADDRESS=noreply@yourschool.com
-MAIL_FROM_NAME="School ERP"
-
-PAYU_MERCHANT_KEY=your_payu_key
-PAYU_MERCHANT_SALT=your_payu_salt
-```
-
-### Step 4: Run Migrations & Seed
-```bash
-php artisan migrate
-php artisan db:seed
-php artisan storage:link
-```
-
-### Step 5: Start Server
-```bash
-php artisan serve
-# Visit: http://localhost:8000
-```
-
-### Default Admin Login
-- **URL**: http://localhost:8000/login
-- **Email**: admin@school.com
-- **Password**: admin@123
-- **Role**: Admin
+1. Log in to **cPanel**
+2. Go to **MySQL Databases**
+3. Under *Create New Database*, enter a name (e.g. `schoolerp`) → click **Create Database**
+4. Under *MySQL Users*, create a new user with a strong password
+5. Under *Add User to Database*, add that user to the database and give **ALL PRIVILEGES**
+6. Note down: **Database name**, **Username**, **Password**, **Host** (usually `localhost`)
 
 ---
 
-## 🌐 cPanel Shared Hosting Deployment
+### Step 2 — Upload Project Files
 
-### Step 1: Upload Files
-1. Upload all files to `public_html/` or a subdomain folder
-2. Move the `/public` folder contents to the document root
-3. Update `public_html/index.php`:
+**Option A — File Manager (recommended)**
+
+1. Open **cPanel → File Manager**
+2. Navigate to the folder where you want the site (e.g. `public_html` for the main domain,
+   or `public_html/school` for a subdirectory)
+3. Click **Upload** → upload the project ZIP file → extract it
+4. You should now have a `school-erp/` folder with subfolders: `app/`, `public/`, `vendor/`, etc.
+
+**Option B — FTP**
+
+Upload all project files using FileZilla or any FTP client to the same location.
+
+---
+
+### Step 3 — Point the Domain to the `/public` Folder
+
+Laravel's webroot is the `public/` subfolder, not the project root.
+You have two options:
+
+**Option A — Subdomain pointing to `/public` (cleanest)**
+
+1. cPanel → **Subdomains** (or Addon Domains)
+2. Create a subdomain or use an existing domain
+3. Set the **Document Root** to `public_html/school-erp/public`
+4. Save
+
+**Option B — Move `public/` contents to `public_html/`**
+
+If you must use `public_html` directly:
+
+1. Copy everything inside `school-erp/public/` into `public_html/`
+2. Edit `public_html/index.php` — change these two lines:
+
+```php
+require __DIR__.'/../vendor/autoload.php';
+$app = require_once __DIR__.'/../bootstrap/app.php';
+```
+to (adjust the path to match where you uploaded):
 ```php
 require __DIR__.'/../school-erp/vendor/autoload.php';
 $app = require_once __DIR__.'/../school-erp/bootstrap/app.php';
 ```
 
-### Step 2: MySQL Setup
-1. Create database in cPanel MySQL Manager
-2. Import `database/school_erp.sql`
-3. Update `.env` with cPanel DB credentials
+---
 
-### Step 3: File Permissions
-```bash
-chmod -R 755 storage/
-chmod -R 755 bootstrap/cache/
-```
+### Step 4 — Set Folder Permissions
 
-### Step 4: Configure .htaccess (public/)
-```apache
-<IfModule mod_rewrite.c>
-    RewriteEngine On
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteRule ^ index.php [L]
-</IfModule>
-```
+In **cPanel → File Manager**, right-click each folder below → **Change Permissions**:
 
-### Step 5: Run via cPanel Terminal
-```bash
-cd /home/username/school-erp
-php artisan key:generate
-php artisan migrate --force
-php artisan db:seed --force
-php artisan storage:link
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-```
+| Folder | Permission |
+|---|---|
+| `storage/` (and all subfolders) | `755` |
+| `bootstrap/cache/` | `755` |
+| `database/` | `755` |
+
+To set permissions recursively on `storage/`:
+- Right-click `storage` → Change Permissions → check **755** → tick **Recurse into subdirectories** → Save.
 
 ---
 
-## 📧 Gmail SMTP Setup
+### Step 5 — Run the Web Installer
 
-1. Go to Google Account → Security
-2. Enable 2-Step Verification
-3. Search for "App passwords" → Create App Password
-4. Choose "Mail" and "Other (Custom name)"
-5. Copy the 16-character password
+1. Open your browser and go to:
+   ```
+   https://yourdomain.com/install.php
+   ```
+2. The installer has 5 steps:
 
-```env
-MAIL_HOST=smtp.gmail.com
-MAIL_PORT=587
-MAIL_USERNAME=yourname@gmail.com
-MAIL_PASSWORD=xxxx xxxx xxxx xxxx   # App password (no spaces)
-MAIL_ENCRYPTION=tls
-```
+| Step | What it does |
+|---|---|
+| 1. Requirements | Checks PHP version, extensions, writable folders |
+| 2. Database | Enter MySQL details (or choose SQLite) |
+| 3. Configuration | Set school name, website URL, admin email & password |
+| 4. Install | Writes `.env`, runs migrations, seeds data, creates admin |
+| 5. Complete | Shows login URL and next steps |
 
-**OR update from Admin Panel:**
-- Login as Admin → Settings → SMTP Settings
+3. After install completes, **delete `install.php`** from File Manager immediately.
 
 ---
 
-## 💳 PayU Payment Gateway Setup
+### Step 6 — Verify Installation
 
-### Test Environment
-1. Register at https://developer.payu.in
-2. Get test merchant key and salt
-3. Update `.env`:
-```env
-PAYU_MERCHANT_KEY=your_test_key
-PAYU_MERCHANT_SALT=your_test_salt
-PAYU_BASE_URL=https://test.payu.in/_payment
-```
+Visit your site:
 
-### Live Environment
+| URL | What you see |
+|---|---|
+| `https://yourdomain.com/` | Public homepage |
+| `https://yourdomain.com/login` | Login page |
+| `https://yourdomain.com/admission` | Admission form |
+| `https://yourdomain.com/admin/dashboard` | Admin panel (after login) |
+
+Default admin login is whatever you entered in Step 3 of the installer.
+
+---
+
+### Step 7 — Configure SMTP Email (Gmail)
+
+**Get a Gmail App Password:**
+
+1. Go to [myaccount.google.com](https://myaccount.google.com) → **Security**
+2. Enable **2-Step Verification** (required)
+3. Search **App passwords** → create one → choose **Mail** → copy the 16-character code
+
+**Set it in the Admin Panel (no file editing needed):**
+
+1. Login as Admin → **Settings → SMTP Settings**
+2. Fill in:
+
+| Field | Value |
+|---|---|
+| SMTP Host | `smtp.gmail.com` |
+| SMTP Port | `587` |
+| Username | `yourname@gmail.com` |
+| Password | The 16-character App Password |
+| From Address | `noreply@yourschool.com` |
+| Encryption | `TLS` |
+
+3. Click **Save SMTP Settings**
+
+---
+
+### Step 8 — Configure PayU Payment Gateway
+
+**Test account (for testing):**
+
+1. Register at [developer.payu.in](https://developer.payu.in)
+2. Get your **Merchant Key** and **Merchant Salt** from the test dashboard
+
+**Live account:**
+
 1. Complete PayU KYC verification
-2. Get live merchant credentials
-3. Update `.env`:
-```env
-PAYU_MERCHANT_KEY=your_live_key
-PAYU_MERCHANT_SALT=your_live_salt
-PAYU_BASE_URL=https://secure.payu.in/_payment
+2. Get live credentials from the PayU merchant dashboard
+
+**Set it in the Admin Panel:**
+
+1. Login as Admin → **Settings → Payment Settings**
+2. Fill in Merchant Key and Merchant Salt
+3. For test mode change the PayU URL to `https://test.payu.in/_payment`
+4. For live mode use `https://secure.payu.in/_payment`
+
+**Callback URLs (register these in your PayU dashboard):**
+
+```
+Success URL: https://yourdomain.com/payment/success
+Failure URL: https://yourdomain.com/payment/failure
 ```
 
-### Success/Failure Callbacks
-These must be accessible URLs:
-- Success: `https://yourdomain.com/payment/success`
-- Failure: `https://yourdomain.com/payment/failure`
+---
+
+### Step 9 — SEO Settings
+
+1. Login as Admin → **Settings → SEO Settings**
+2. Fill in:
+   - Meta Title, Meta Description, Keywords
+   - Google Analytics ID (e.g. `G-XXXXXXXXXX`)
+   - Schema Organization details (name, phone, address)
+3. **Verify sitemap**: visit `https://yourdomain.com/sitemap.xml`
+4. **Submit to Google Search Console**:
+   - Go to [search.google.com/search-console](https://search.google.com/search-console)
+   - Add property → enter your domain
+   - Verify via HTML meta tag (paste it in Admin → SEO → Verification Tag)
+   - Submit sitemap URL
 
 ---
 
-## 🔍 SEO Setup Guide
+## Common cPanel Issues & Fixes
 
-### 1. Configure SEO from Admin Panel
-- Login as Admin → Settings → SEO Settings
-- Fill in: Meta Title, Description, Keywords
-- Add Google Analytics ID (G-XXXXXXX)
-- Add Schema Organization data
+### White screen / 500 error after upload
 
-### 2. Verify Sitemap
-- Access: `https://yourdomain.com/sitemap.xml`
-- Submit to Google Search Console
+**Cause**: `.env` file missing or permissions wrong.
+**Fix**: The web installer creates `.env` automatically. If you skipped the installer,
+copy `.env.example` to `.env` via File Manager.
 
-### 3. Verify Robots.txt
-- Access: `https://yourdomain.com/robots.txt`
+### "Class not found" errors
 
-### 4. Google Search Console
-1. Visit https://search.google.com/search-console
-2. Add property → Enter domain
-3. Verify via HTML tag (paste in Admin → SEO → Google Site Verification)
-4. Submit sitemap URL
+**Cause**: `vendor/` folder not uploaded.
+**Fix**: Make sure you upload the `vendor/` folder from the project. It contains all PHP
+dependencies. It is large (~50 MB) but must be present.
+
+### Images / uploads not showing
+
+**Cause**: Storage symlink not created.
+**Fix**: The installer creates this automatically. If it failed, in File Manager
+create a folder named `storage` inside `public/` and point it to `storage/app/public/`
+— or contact hosting support to run `php artisan storage:link` from their backend.
+
+### Session / login issues
+
+**Fix**: In File Manager, ensure `storage/framework/sessions/` exists and is writable (755).
+
+### "Writable: NOT WRITABLE" in installer
+
+**Fix**: Set permissions to `755` on the listed folder via File Manager
+(right-click → Change Permissions).
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 school-erp/
 ├── app/
-│   ├── Http/
-│   │   ├── Controllers/
-│   │   │   ├── Auth/         # Authentication (login, OTP, password reset)
-│   │   │   ├── Admin/        # Admin panel controllers
-│   │   │   ├── Student/      # Student portal + payment
-│   │   │   ├── Teacher/      # Teacher portal
-│   │   │   ├── Parent/       # Parent portal
-│   │   │   └── Public/       # Public pages (home, admission, blog)
-│   │   └── Middleware/
-│   │       ├── RoleMiddleware.php     # Role-based access control
-│   │       └── SettingsMiddleware.php # Global settings injection
-│   ├── Mail/             # Email classes (OTP, admission, fee, notification)
-│   └── Models/           # Eloquent models
+│   ├── Http/Controllers/
+│   │   ├── Auth/         — Login, OTP password reset
+│   │   ├── Admin/        — Admin panel (students, fees, settings…)
+│   │   ├── Student/      — Student portal + PayU payment
+│   │   ├── Teacher/      — Attendance, homework
+│   │   ├── Parent/       — Children overview
+│   │   └── Public/       — Homepage, admission, blog, sitemap
+│   ├── Mail/             — Email classes (OTP, admission, fee, notification)
+│   ├── Models/           — Eloquent models
+│   └── Http/Middleware/
+│       ├── RoleMiddleware.php      — Role-based access control
+│       └── SettingsMiddleware.php  — Injects site settings into all views
 ├── database/
-│   ├── migrations/       # Database schema migrations
-│   ├── seeders/          # Default data seeder
-│   └── school_erp.sql    # Complete SQL dump
-├── resources/
-│   └── views/
-│       ├── layouts/      # Main layout (app.blade.php, public.blade.php)
-│       ├── auth/         # Login, forgot password, verify OTP, reset
-│       ├── admin/        # Admin panel views
-│       ├── student/      # Student portal views
-│       ├── teacher/      # Teacher portal views
-│       ├── parent/       # Parent portal views
-│       ├── public/       # Public website views
-│       └── emails/       # Email templates
-└── routes/
-    └── web.php           # All application routes
+│   ├── migrations/       — All table schemas
+│   ├── seeders/          — Default data (classes 1–12, settings, categories)
+│   └── school_erp.sql    — Complete MySQL dump (alternative to migrations)
+├── public/
+│   ├── index.php         — Application entry point
+│   └── install.php       — Web installer (delete after use!)
+└── resources/views/
+    ├── layouts/          — app.blade.php (SaaS), public.blade.php (website)
+    ├── auth/             — Login, forgot password, OTP, reset
+    ├── admin/            — All admin panel views
+    ├── student/          — Student portal views
+    ├── teacher/          — Teacher portal views
+    ├── parent/           — Parent portal views
+    ├── public/           — Public website pages
+    └── emails/           — HTML email templates
 ```
 
 ---
 
-## 🔐 Security Notes
+## Security Notes
 
-- All passwords hashed with bcrypt (cost factor: 12)
-- CSRF protection on all forms
-- Role-based access control via middleware
+- All passwords hashed with bcrypt (cost 12)
+- CSRF protection on every form
+- Role-based access control via `RoleMiddleware`
 - SQL injection prevention via Eloquent ORM
 - Session regeneration after login
-- PayU hash verification for payment callbacks
-- Input validation and sanitization on all endpoints
+- PayU SHA512 hash verification on payment callbacks
+- Input validation on all user-facing endpoints
+- Install lock file prevents re-running the installer
 
 ---
 
-## 📞 Support
+## User Roles & Login URLs
 
-For technical support:
-- Email: support@schoolerp.com
-- Documentation: Available in /docs folder
+| Role | Login URL | Default path after login |
+|---|---|---|
+| Admin | `/login` | `/admin/dashboard` |
+| Teacher | `/login` | `/teacher/dashboard` |
+| Student | `/login` | `/student/dashboard` |
+| Parent | `/login` | `/parent/dashboard` |
 
 ---
 
-## 🧰 Useful Artisan Commands
+## Gmail SMTP — Quick Reference
 
-```bash
-# Clear all caches
-php artisan optimize:clear
-
-# Cache for production
-php artisan optimize
-
-# Generate storage symlink
-php artisan storage:link
-
-# View all routes
-php artisan route:list
-
-# Run specific migration
-php artisan migrate --path=database/migrations/specific_file.php
-
-# Reset and re-seed database
-php artisan migrate:fresh --seed
-
-# Test email configuration
-php artisan tinker
->>> Mail::raw('Test', fn($m) => $m->to('test@test.com')->subject('Test'));
-```
+| Setting | Value |
+|---|---|
+| Host | `smtp.gmail.com` |
+| Port | `587` |
+| Encryption | `TLS` |
+| Username | Your full Gmail address |
+| Password | 16-character App Password (not your Gmail password) |
